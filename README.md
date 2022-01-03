@@ -2,7 +2,7 @@
 
 ## Installation
 ```bash
-git clone
+git clone https://github.com/xinaxu/spacecar.git
 sudo apt install ruby
 sudo gem install bundler
 sudo bundle install
@@ -12,7 +12,7 @@ sudo bundle install
 https://github.com/filedrive-team/go-graphsplit
 
 ### Usage
-spacecar.config.yaml
+Create file spacecar.config.yaml
 ```yaml
 # Number of threads to process at the same time.
 num_threads: 4
@@ -36,3 +36,11 @@ copy:
 # Stop copying car files to mounted path if the disk available space is less than set value
 disk_available_gb: 200
 ```
+To run
+```bash
+ruby spacecar.rb
+```
+
+### TODO
+1. implement keep\_input\_files: false
+2. resume progress
