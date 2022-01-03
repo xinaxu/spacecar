@@ -1,0 +1,17 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    ffi (1.15.4)
+    parallel (1.21.0)
+    sys-filesystem (1.4.3)
+      ffi (~> 1.1)
+
+PLATFORMS
+  x86_64-linux
+
+DEPENDENCIES
+  parallel
+  sys-filesystem
+
+BUNDLED WITH
+   2.3.4
