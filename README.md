@@ -1,12 +1,12 @@
 # spacecar
 ## Features
 This tool will automatically prepare deals for a dataset in a streamlined way.
-  a. Generate CAR file with IPLD
-  b. Split files to fit into sector size
-  c. Compute commP for piece\_size and piece\_cid
-  d. Generate list of files contained in each CAR file
-  e. Copy file to multiple hard drives for easier distribution via shipping
-  f. Upload file to Backblaze B2 cloud storage for distribution via Internet
+1. Generate CAR file with IPLD
+2. Split files to fit into sector size
+3. Compute commP for piece\_size and piece\_cid
+4. Generate list of files contained in each CAR file
+5. Copy file to multiple hard drives for easier distribution via shipping
+6. Upload file to Backblaze B2 cloud storage for distribution via Internet
 For faster processing, use tmpfs or fast NVME drive for temp folder and tmpdir.
 ## Installation
 ```bash
