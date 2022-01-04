@@ -7,6 +7,7 @@ This tool will automatically prepare deals for a dataset in a streamlined way.
 4. Generate list of files contained in each CAR file
 5. Copy file to multiple hard drives for easier distribution via shipping
 6. Upload file to Backblaze B2 cloud storage for distribution via Internet
+
 For faster processing, use tmpfs or fast NVME drive for temp folder and tmpdir.
 ## Installation
 ```bash
