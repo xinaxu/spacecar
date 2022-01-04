@@ -5,7 +5,8 @@ require 'pathname'
 require 'json'
 require 'parallel'
 require 'sys/filesystem'
-config = YAML.load(File.read('spacecar.config.yaml'))
+config_file = ARGV[0] || 'spacecar.config.yaml'
+config = YAML.load(File.read(config_file))
 @num_threads = config['num_threads']
 @input= config['input_folder']
 @output= config['output_folder']
@@ -18,19 +19,14 @@ config = YAML.load(File.read('spacecar.config.yaml'))
 @compress = config['compress_level']
 @copy = config['copy']
 @disk_available = config['disk_available_gb']
+@b2 = config['copy_b2']
 
 unless File.directory? @input
   raise "input folder '#{@input}' does not exist or is not a directory"
 end
-if @copy
-  @copy.each do |dst|
-    if Sys::Filesystem.mounts.none?{|mount| mount.mount_point == dst}
-      raise "copy destination #{dst} is not mounted path"
-    end
-  end
-end
 
 FileUtils.mkdir_p(@output)
+FileUtils.rm_rf Dir.glob(File.join(@temp, '*'))
 
 def generate_groups(paths)
   groups = []
@@ -72,6 +68,11 @@ groups = generate_groups(paths)
 
 puts "== Generating Cars with #{@num_threads} threads"
 Parallel.each_with_index(groups, in_threads: @num_threads) do |group, index|
+  commp_file = "#{@output}/#{@name}.#{index}.commp"
+  if File.exists?(commp_file) && File.size(commp_file) > 10
+    puts "== [#{index}] Skipped"
+    next
+  end
   puts "== [#{index}] Transfering data to temp folder"
   temp = File.join(@temp, index.to_s)
   temp_ipfs = File.absolute_path(File.join(@temp, index.to_s, 'ipfs'))
@@ -108,20 +109,29 @@ Parallel.each_with_index(groups, in_threads: @num_threads) do |group, index|
   threads.push(Thread.new{FileUtils.cp(temp_car, @output)})
   threads.push(Thread.new{system("TMPDIR=#{File.absolute_path(@tmp_dir)} graphsplit commP #{temp_car} > #{commp_file}")})
   if @compress > 0
-    threads.push(Thread.new{system("zstdmt -#{@compress} #{temp_car} -o #{zst_file}")})
+    threads.push(Thread.new{
+      system("zstdmt -f -#{@compress} #{temp_car} -o #{zst_file}")
+      if @b2
+        threads.push(Thread.new{system("b2 upload-file --quiet --threads 16 #{@b2} #{zst_file} #{@name}.#{index}.car.zst")})
+      end
+    })
+  else
+    if @b2
+      threads.push(Thread.new{system("b2 upload-file --quiet --threads 16 #{@b2} #{temp_car} #{@name}.#{index}.car")})
+    end
   end
   if @copy
     @copy.each do |dst|
-      threads.push(Threads.new do
+      threads.push(Thread.new do
         loop do
-          if File.writable?(dst) && Sys::Filesystem.mounts.any{|mount| mount.mount_point == dst}
+          if File.writable?(dst) && Sys::Filesystem.mounts.any?{|mount| mount.mount_point == dst}
             dst_stat = Sys::Filesystem.stat(dst)
             if dst_stat.block_size * dst_stat.blocks_available / 1024 / 1024 / 1024 >= @disk_available
               break
             end
           end
-          puts "Please replace disk #{dst} and make sure it's writable and has at least #{disk_available} GB space"
-          sleep 600
+          puts "Please replace disk #{dst} and make sure it's writable and has at least #{@disk_available} GB space"
+          sleep 60
         end
         FileUtils.cp(temp_car, dst)
       end)
